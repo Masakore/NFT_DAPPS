@@ -50,7 +50,7 @@ server.post('/mint', async (req, res) => {
     const tx = {
       from: process.env.ACCOUNT,
       to: abi.address,
-      gas: 1000000,
+      gas: 1000000, // TODO: fix this
       data: simpleNFT.methods.mint(recipient).encodeABI()
     };
     const signature = await web3.eth.accounts.signTransaction(tx, privateKey);
