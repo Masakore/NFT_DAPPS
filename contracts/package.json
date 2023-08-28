@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "hardhat test test/SimpleNFT.js",
     "lint:check": "eslint . --ext js",
     "lint:fix": "eslint --fix . --ext js",
     "prettier:check": "prettier --check --plugin=prettier-plugin-solidity '**/*.{js,json,sol}'",
