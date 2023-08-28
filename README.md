@@ -13,3 +13,18 @@ cd frontend
 npm install
 npm run start
 ```
+
+## Code Style Guide
+```
+Code Style Guide:
+1. Prettier
+=> Done
+2. Estlint
+=> Done
+3. Preferably Typescript & Solidity
+=> Partially done
+4. Preferably with Husky set up for pre-commit/push hooks.
+=> Added but not working properly. Needs to migrate this project into Monorepo like using pnpm.
+5. Add details and steps to replicate your local project setup inside a README file.
+=> Done
+```
