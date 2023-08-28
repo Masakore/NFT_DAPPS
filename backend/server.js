@@ -1,12 +1,13 @@
 const express = require('express');
 const Web3 = require('web3');
+const cors = require('cors');
 require('dotenv').config();
 
 // Load contract ABI
 const abi = require('./abi/SimpleNFT.json');
 
 // Set up blockchain provider
-const rpcURL = process.env.RPC_URL || ''; 
+const rpcURL = process.env.RPC_URL || '';
 const provider = new Web3.providers.HttpProvider(rpcURL);
 const web3 = new Web3(provider);
 const simpleNFT = new web3.eth.Contract(abi.abi, abi.address);
@@ -16,6 +17,7 @@ const server = express();
 const port = process.env.PORT || 8000;
 server.use(express.urlencoded({ extended: true }));
 server.use(express.json()); // To parse the incoming requests with JSON payloads
+server.use(cors()); // Bad practice but to save time for this demo
 
 // Endpoints
 // live test
@@ -31,7 +33,7 @@ server.get('/connectionTest', async (req, res) => {
       status: 'ok',
       blockNumber: blockNumber
     });
-  } catch (error) { 
+  } catch (error) {
     console.log(error);
   }
 
@@ -41,7 +43,7 @@ server.get('/connectionTest', async (req, res) => {
 });
 
 // mint NFT
-server.post('/mint', async (req, res) => { 
+server.post('/mint', async (req, res) => {
   try {
     const { recipient } = req.body;
     const privateKey = process.env.PRIVATE_KEY;
@@ -50,14 +52,14 @@ server.post('/mint', async (req, res) => {
       to: abi.address,
       gas: 1000000,
       data: simpleNFT.methods.mint(recipient).encodeABI()
-    }
+    };
     const signature = await web3.eth.accounts.signTransaction(tx, privateKey);
     web3.eth.sendSignedTransaction(signature.rawTransaction);
 
     return res.json({
       status: 'ok'
     });
-  } catch (error) { 
+  } catch (error) {
     console.log(error);
   }
 
@@ -66,7 +68,7 @@ server.post('/mint', async (req, res) => {
   });
 });
 
-server.get('/details', async (req, res) => {
+server.post('/details', async (req, res) => {
   try {
     const { user } = req.body;
     const totalSupply = await simpleNFT.methods.totalSupply().call();
@@ -81,7 +83,7 @@ server.get('/details', async (req, res) => {
       totalSupply: totalSupply,
       balanceOf: balanceOf
     });
-  } catch (error) { 
+  } catch (error) {
     console.log(error);
   }
 
@@ -92,4 +94,4 @@ server.get('/details', async (req, res) => {
 
 server.listen(port, () => {
   console.log(`Server listening at ${port}`);
-})
+});
