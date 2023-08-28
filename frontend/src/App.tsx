@@ -1,44 +1,72 @@
-import React, { useState, useEffect } from 'react';
-import { Web3 } from "web3";
+import "./App.css";
+import { useState, useEffect } from "react";
+import detectEthereumProvider from "@metamask/detect-provider";
 
-function App() {
+const App = () => {
+  const BACKEND_ENDPOINT = "https://simple-nft-test-b736bcd4d7ca.herokuapp.com";
+  const [hasProvider, setHasProvider] = useState<boolean | null>(null);
+  const initialState = { accounts: [] }; 
+  const [wallet, setWallet] = useState(initialState); 
   const [data, setData] = useState(null);
 
+
   useEffect(() => {
-      let userAddress = "";
-      async function onInit() {
-        if (!(window as any).ethereum) {
-          await (window as any).ethereum.enable();
-        }
-        const accounts = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
-        return accounts[0];
-      }
-      onInit().then(currentUser => userAddress = currentUser);
-      console.log(userAddress);
-      console.log(userAddress === "0xb9c56a4adec6dfcdfdfba995326a7db98494e37b");
-      fetch("https://simple-nft-test-b736bcd4d7ca.herokuapp.com/details", {
-        body: JSON.stringify({
-          user: "0xb9c56a4adec6dfcdfdfba995326a7db98494e37b",
-        }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      })
-        .then((response) => response.json())
-        .then((json) => setData(json))
-        .catch((error) => console.error(error));
+    const getProvider = async () => {
+      const provider = await detectEthereumProvider({ silent: true });
+      setHasProvider(Boolean(provider));
+    };
+
+    getProvider();
   }, []);
 
+  const updateWallet = async (accounts: any) => {
+    
+    setWallet({ accounts }); 
+  }; 
+
+  const fetchNFTData = async (userAddress: string) => {
+    fetch(`${BACKEND_ENDPOINT}/details`, {
+      body: JSON.stringify({
+        user: userAddress,
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    })
+    .then((response) => response.json())
+    .then((json) => {
+      if (json.balanceOf !== "0") { // TODO: move this logic to backend
+        setData(json);
+      }
+    })
+    .catch((error) => console.error(error));
+  }
+
+  const handleConnect = async () => {
+    
+    let accounts = await (window as any).ethereum.request({
+       method: "eth_requestAccounts",
+    }); 
+    updateWallet(accounts); 
+    await fetchNFTData(accounts[0]); 
+  }; 
+
   return (
-    <>
-      <header>
-        <h1>Simple NFT dApp</h1>
-      </header>
+    <div className="App">
+      <div>Injected Provider {hasProvider ? "DOES" : "DOES NOT"} Exist</div>
+
+      {hasProvider && (
+        <button onClick={handleConnect}>Connect MetaMask</button>
+      )}
+
+      {wallet.accounts.length > 0  && (
+        <div>Wallet Accounts: {wallet.accounts[0]}</div>
+      )}
       <div>
         {/* TODO: Implement UI */}
         {data ? <pre>{JSON.stringify(data, null, 2)}</pre> : "Loading..."}
       </div>
-    </>
+    </div>
   );
-}
+};
 
 export default App;
