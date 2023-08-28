@@ -1,13 +1,11 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-  const nft = await ethers.deployContract('SimpleNFT', {});
+  const nft = await ethers.deployContract("SimpleNFT", {});
 
   await nft.waitForDeployment();
 
-  console.log(
-    `SimpleNFT deployed to ${nft.target}`
-  );
+  console.log(`SimpleNFT deployed to ${nft.target}`);
 }
 
 main().catch((error) => {
