@@ -1,16 +1,18 @@
-const express = require("express");
-const Web3 = require("web3");
-const cors = require("cors");
-require("dotenv").config();
+import express from 'express';;
+import Web3 from 'web3';
+import { AbiItem } from 'web3-utils';
+import cors from 'cors';
+import 'dotenv/config';
+import db from "./database";
 
 // Load contract ABI
-const abi = require("./abi/SimpleNFT.json");
+import contractMetadata from "./abi/SimpleNFT.json";
 
 // Set up blockchain provider
 const rpcURL = process.env.RPC_URL || "";
 const provider = new Web3.providers.HttpProvider(rpcURL);
 const web3 = new Web3(provider);
-const simpleNFT = new web3.eth.Contract(abi.abi, abi.address);
+const simpleNFT = new web3.eth.Contract(contractMetadata.abi as AbiItem[], contractMetadata.address);
 
 // Set up server
 const server = express();
@@ -43,21 +45,40 @@ server.get("/connectionTest", async (req, res) => {
 });
 
 // mint NFT
+// @todo error handling
 server.post("/mint", async (req, res) => {
   try {
     const { recipient } = req.body;
     const privateKey = process.env.PRIVATE_KEY;
+    if (!privateKey) {
+      return res.json({
+        status: "failed",
+        message: "Private key might not be set",
+      });
+    }
+
     const tx = {
       from: process.env.ACCOUNT,
-      to: abi.address,
-      gas: 1000000, // TODO: fix this
+      to: contractMetadata.address,
+      gas: 1000000,
       data: simpleNFT.methods.mint(recipient).encodeABI(),
     };
     const signature = await web3.eth.accounts.signTransaction(tx, privateKey);
-    web3.eth.sendSignedTransaction(signature.rawTransaction);
+    if (signature && signature.rawTransaction) {
+      await web3.eth.sendSignedTransaction(signature.rawTransaction);
+      const stmt = db.prepare(
+        'INSERT INTO nft_receipts (nft_id, owner) VALUES (?, ?)',
+      );
+      stmt.run("111", recipient);
+
+      return res.json({
+        status: "ok",
+      });
+    }
 
     return res.json({
-      status: "ok",
+      status: "failed",
+      message: "Error occurred while creating a signature. Private key might be invalid",
     });
   } catch (error) {
     console.log(error);
@@ -92,6 +113,17 @@ server.post("/details", async (req, res) => {
   });
 });
 
+// Retrieve all receipts
+server.get('/receipts', (req, res) => {
+  db.all('SELECT * FROM nft_receipts', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
 server.listen(port, () => {
   console.log(`Server listening at ${port}`);
 });
+
+// Reference
+// https://celo.academy/t/interact-with-smart-contract-on-celo-using-web3js/256
