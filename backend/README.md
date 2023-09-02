@@ -50,6 +50,10 @@ When hosting a static site on AWS, using S3 and CloudFront together allows for f
 - **Middle layer**
 This application has both administrators and users. While this sample application is built on a very simple mechanism, in a production system, it is necessary to implement user management features using AWS services like Amazon Cognito. Once authentication is complete, the request is processed. This application is simply saving the receipt when an NFT is minted, so there's no need for complex queries or constantly running servers. Therefore, I propose a serverless architecture using Amazon API Gateway, Amazon Lambda, and Amazon Dynamo.
 
+@todo
+Describe about API Gateway caching
+Lambda -> Clustering
+
 The following are four main benefits of adopting a serverless approach:
 
 1. No need for server management

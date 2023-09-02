@@ -1,0 +1,15 @@
+{
+  "name": "simple-nft-dapp",
+  "version": "1.0.0",
+  "description": "Simple NFT project to learn Web3 technology",
+  "main": "",
+  "engines": {
+    "node": "18.x"
+  },
+  "scripts": {
+    "postinstall": "cd backend/ && npm install"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
