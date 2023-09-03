@@ -1,5 +1,6 @@
 import detectEthereumProvider from "@metamask/detect-provider";
 import { FC, useEffect, useState } from "react";
+import 'dotenv/config';
 import ABI from "../abi/SimpleNFT.json";
 import "./input.css";
 
@@ -13,8 +14,9 @@ const formatToWei = (amountInEth: number): string => {
 };
 
 const App: FC = () => {
-  const backendEndpoint = "https://simplenft-api-b04ba9fe9c76.herokuapp.com";
-  // const backendEndpoint = process.env.BACKEND_ENDPOINT || "https://simple-nft-test-b736bcd4d7ca.herokuapp.com";
+  const backendEndpoint =
+    process.env.BACKEND_ENDPOINT ||
+    "https://simplenft-api-b11f0d93b70a.herokuapp.com";
 
   // Wallet states
   const [hasProvider, setHasProvider] = useState<boolean | null>(null);
@@ -22,10 +24,12 @@ const App: FC = () => {
   const [wallet, setWallet] = useState(initialState);
   const [isConnecting, setIsConnecting] = useState(false);
   const disableConnection = Boolean(wallet) && isConnecting;
+  const showConnectBtn = window.ethereum?.isMetaMask && wallet.accounts.length < 1;
 
   // Minting states
   const [isMinting, setIsMinting] = useState(false);
   const [isMinted, setIsMinted] = useState(false);
+  const disableMint = isMinting || showConnectBtn || !hasProvider;
 
   // Donation states
   const [isDonating, setIsDonating] = useState(false);
@@ -33,6 +37,7 @@ const App: FC = () => {
 
   // NFT details state
   const [nftDetail, setNftDetail] = useState<NftDetail>();
+  const showNFTDetails = nftDetail?.balanceOf && parseInt(nftDetail?.balanceOf) > 0;
 
   // General error message 
   const [error, setError] = useState(false);
@@ -86,7 +91,7 @@ const App: FC = () => {
     const fetchNFTDetails = async (userAddress: string) => {
       fetch(`${backendEndpoint}/details`, {
         body: JSON.stringify({
-          user: userAddress,
+          userAddress: userAddress,
         }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
@@ -139,12 +144,15 @@ const App: FC = () => {
     setIsMinting(true);
     fetch(`${backendEndpoint}/mint`, {
       body: JSON.stringify({
-        user: userAddress,
+        recipient: userAddress,
       }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
     })
-      .then(() => setIsMinted(true))
+      .then(() => {
+        setError(false);
+        setIsMinted(true);
+      })
       .catch((err: any) => {
         setError(true);
         setErrorMessage(err.message);
@@ -168,6 +176,7 @@ const App: FC = () => {
         ],
       })
       .then((txHash: string) => {
+        setError(false);
         setIsDonated(true);
         console.log(txHash);
       })
@@ -208,11 +217,11 @@ const App: FC = () => {
               Get Metamask
             </a>
           )}
-          {window.ethereum?.isMetaMask && wallet.accounts.length < 1 && (
+          {showConnectBtn && (
             <button
               disabled={disableConnection}
               onClick={handleConnect}
-              className="hidden rounded-lg bg-indigo-500 px-8 py-3 text-center text-sm font-semibold text-white outline-none ring-indigo-300 transition duration-100 hover:bg-gray-300 focus-visible:ring active:text-gray-700 md:text-base lg:inline-block"
+              className="hidden rounded-lg bg-indigo-500 px-8 py-3 text-center text-sm font-semibold text-white outline-none ring-indigo-300 transition duration-100 hover:bg-gray-300 focus-visible:ring active:text-gray-700 md:text-base lg:inline-block disabled:opacity-70"
             >
               Connect MetaMask
             </button>
@@ -234,15 +243,15 @@ const App: FC = () => {
             <div className="mb-8 text-red-500 leading-relaxed  md:mb-12 lg:w-4/5 xl:text-lg">
               {error && (
                 <div onClick={() => setError(false)} className="text-red-500">
-                  <strong>Something went wrong. Please try again later</strong>
-                  <p>{errorMessage}</p>
+                  <strong>Something went wrong. Please try again later.</strong>
+                  <p> Here's error message: {errorMessage}</p>
                 </div>
               )}
             </div>
 
             {/* NFT Details */}
             <div className="mb-8 text-2xl font-bold text-black text-center">
-              {nftDetail && (
+              {showNFTDetails && (
                 <div>{`${nftDetail.balanceOf} (Yours)/ ${nftDetail.totalSupply} (Total Issued)`}</div>
               )}
             </div>
@@ -264,7 +273,7 @@ const App: FC = () => {
                     <button
                       disabled={isDonating}
                       onClick={() => sendDonation()}
-                      className="inline-block rounded-lg bg-indigo-500 px-8 py-3 text-center text-sm font-semibold text-white outline-none ring-indigo-300 transition duration-100 hover:bg-indigo-600 focus-visible:ring active:bg-indigo-700 md:text-base"
+                      className="inline-block rounded-lg bg-indigo-500 px-8 py-3 text-center text-sm font-semibold text-white outline-none ring-indigo-300 transition duration-100 hover:bg-indigo-600 focus-visible:ring active:bg-indigo-700 md:text-base disabled:opacity-70"
                     >
                       {isDonated ? "Thank you ありがとう!" : "Donate 0.001 ETH"}
                     </button>
@@ -273,9 +282,9 @@ const App: FC = () => {
               </div>
             ) : (
               <button
-                disabled={isMinting}
+                disabled={disableMint}
                 onClick={() => mint(wallet.accounts[0])}
-                className="inline-block rounded-lg bg-indigo-500 px-8 py-3 text-center text-sm font-semibold text-white outline-none ring-indigo-300 transition duration-100 hover:bg-indigo-600 focus-visible:ring active:bg-indigo-700 md:text-base"
+                className="inline-block rounded-lg bg-indigo-500 px-8 py-3 text-center text-sm font-semibold text-white outline-none ring-indigo-300 transition duration-100 hover:bg-indigo-600 focus-visible:ring active:bg-indigo-700 md:text-base disabled:opacity-70"
               >
                 Get Free NFT
               </button>
