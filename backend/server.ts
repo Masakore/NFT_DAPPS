@@ -18,7 +18,6 @@ const simpleNFT = new web3.eth.Contract(contractMetadata.abi as AbiItem[], contr
 
 // Set up private key
 const privateKey = process.env.PRIVATE_KEY;
-// @todo process exit code?
 if (!privateKey) throw new Error("Private key is not set");
 
 // Set up express
@@ -50,7 +49,6 @@ server.get("/connectionTest", async (_, res: Response) => {
 });
 
 // mint NFT
-// @todo error handling
 server.post("/mint", async (req: Request, res: Response) => {
   try {
     const { recipient } = req.body;
@@ -61,12 +59,7 @@ server.post("/mint", async (req: Request, res: Response) => {
       gas: 1000000, // @todo introduce dynamic gas estimation
       data: simpleNFT.methods.mint(recipient).encodeABI(),
     };
-    // const signature = await web3.eth.accounts.signTransaction(tx, privateKey).then((signedTx) => { if (signedTx.rawTransaction) return signedTx }).catch((error) => { 
-    //   return res.status(500).json({
-    //     status: "failed",
-    //     message: "Error occurred while creating a signature. Private key might be invalid: " + error,
-    //   });
-    //  });
+
     const signature = await web3.eth.accounts.signTransaction(tx, privateKey);
     if (!signature || !signature.rawTransaction) { 
       throw new Error("Error occurred while creating a signature. Private key might be invalid");
@@ -93,6 +86,7 @@ server.post("/mint", async (req: Request, res: Response) => {
   }
 });
 
+// Fetch NFT details plus user's balance
 server.post("/details", async (req: Request, res: Response) => {
   try {
     const { userAddress } = req.body;
@@ -117,13 +111,28 @@ server.post("/details", async (req: Request, res: Response) => {
 });
 
 // Retrieve all receipts
-server.get('/receipts', (_, res: Response) => {
-  db.all('SELECT * FROM nft_receipts', [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    return res.status(200).json(rows);
-  });
+server.post('/receipts', (req: Request, res: Response) => {
+  try {
+    const { userAddress } = req.body;
+    db.all('SELECT * FROM nft_receipts WHERE owner = ?', [userAddress], (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      return res.status(200).json(rows);
+    });
+  } catch (error) { 
+    console.log(error);
+    return res.status(500).json({
+      status: "failed",
+    });
+  }
 });
 
 server.listen(port, () => {
   console.log(`Server listening at ${port}`);
 });
+
+/* @todo
+- introduce proper error handlings
+- introduce dynamic gas estimation 
+- db connection pooling
+- db connection close
+*/

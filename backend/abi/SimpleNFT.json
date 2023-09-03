@@ -1,5 +1,5 @@
 {
-  "address": "0x6fA5FD1FC96be179e0B2f56a94162a8E8988dEAA",
+  "address": "0xB9eE59403FA399C920576778BE068A7929A71Fd0",
   "abi": [
     {
       "inputs": [],
@@ -189,13 +189,7 @@
         }
       ],
       "name": "mint",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "newTokenId",
-          "type": "uint256"
-        }
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -462,6 +456,10 @@
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "receive"
     }
   ]
 }
