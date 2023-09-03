@@ -12,7 +12,7 @@ import contractMetadata from "./abi/SimpleNFT.json";
 
 // Set up blockchain provider
 const rpcURL = process.env.RPC_URL || "127.0.0.1:8545";
-const provider = new Web3.providers.HttpProvider(rpcURL);
+const provider = new Web3.providers.HttpProvider(rpcURL, {timeout:300});
 const web3 = new Web3(provider);
 const simpleNFT = new web3.eth.Contract(contractMetadata.abi as AbiItem[], contractMetadata.address);
 
@@ -126,9 +126,11 @@ server.post('/receipts', (req: Request, res: Response) => {
   }
 });
 
-server.listen(port, () => {
+const serverTimeoutSetting = server.listen(port, () => {
   console.log(`Server listening at ${port}`);
 });
+
+serverTimeoutSetting.timeout = 120000; // 2 minutes
 
 /* @todo
 - introduce proper error handlings
