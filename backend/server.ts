@@ -34,7 +34,8 @@ if (!privateKey) throw new Error('Private key is not set');
 // Set up express
 const server = express();
 const port = process.env.PORT || 8000;
-server.use(timeout('120s')); // Find better approach. 120s is too long
+// The Heroku router drops a long-running request after 30 seconds, but the dyno behind it continues processing the request until completion. Adding a timeout ensures that the dyno itself drops the long-running request, creating capacity for other requests.
+server.use(timeout('30s'));
 server.use(express.urlencoded({ extended: true }));
 server.use(express.json()); // To parse the incoming requests with JSON payloads
 server.use(cors()); // Bad practice but to save time for this demo
