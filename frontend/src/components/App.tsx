@@ -4,6 +4,7 @@ import 'dotenv/config';
 import ABI from "../abi/SimpleNFT.json";
 import "./input.css";
 
+// @todo move to a helper file
 const formatBalance = (rawBalance: string): string => {
   const balance = (parseInt(rawBalance) / 1000000000000000000).toFixed(2);
   return balance;
@@ -12,6 +13,15 @@ const formatBalance = (rawBalance: string): string => {
 const formatToWei = (amountInEth: number): string => {
   return "0x" + (amountInEth * 1000000000000000000).toString(16);
 };
+
+// Backend API response type: returns the current user's NFT details 
+type NftDetail = {
+  status: string,
+  name: string,
+  symbol: string,
+  totalSupply: string,
+  balanceOf: string
+}
 
 const App: FC = () => {
   const backendEndpoint =
@@ -27,9 +37,8 @@ const App: FC = () => {
   const showConnectBtn = window.ethereum?.isMetaMask && wallet.accounts.length < 1;
 
   // Minting states
-  const [isMinting, setIsMinting] = useState(false);
   const [isMinted, setIsMinted] = useState(false);
-  const disableMint = isMinting || showConnectBtn || !hasProvider;
+  const disableMint = showConnectBtn || !hasProvider;
 
   // Donation states
   const [isDonating, setIsDonating] = useState(false);
@@ -42,15 +51,6 @@ const App: FC = () => {
   // General error message 
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
-  // Backend API response type: returns the current user's NFT details 
-  type NftDetail = {
-    status: string,
-    name: string,
-    symbol: string,
-    totalSupply: string,
-    balanceOf: string
-  }
 
   // Connect to MetaMask
   useEffect(() => {
@@ -103,18 +103,27 @@ const App: FC = () => {
         .catch((error) => console.error(error));
     };
 
+    // Set interval to check the NFT details every 5 seconds for new mint
+    const interval = setInterval(() => {
+      fetchNFTDetails(wallet.accounts[0]);
+     }, 10000);
+
     if (wallet.accounts.length > 0) {
       fetchNFTDetails(wallet.accounts[0]);
     }
+    setIsMinted(false);
+
+    return () => clearInterval(interval);
   }, [wallet]);
 
   useEffect(() => {
-    // If the user has minted the NFT, set the isMinted to true
-    setIsMinted(nftDetail?.balanceOf && parseInt(nftDetail.balanceOf) > 0 ? true : false);
+    // If the user has some NFT(balance > 0), set the isMinted to true
+    setIsMinted(isMinted || (nftDetail?.balanceOf && parseInt(nftDetail.balanceOf) > 0) ? true : false);
    }, [nftDetail]);
 
   const updateWallet = async (accounts: any) => {
     const balance = formatBalance(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       await window.ethereum!.request({
         method: "eth_getBalance",
         params: [accounts[0], "latest"],
@@ -141,7 +150,7 @@ const App: FC = () => {
   };
 
   const mint = async (userAddress: string) => {
-    setIsMinting(true);
+        setIsMinted(true);
     fetch(`${backendEndpoint}/mint`, {
       body: JSON.stringify({
         recipient: userAddress,
@@ -151,13 +160,12 @@ const App: FC = () => {
     })
       .then(() => {
         setError(false);
-        setIsMinted(true);
       })
       .catch((err: any) => {
-        setError(true);
-        setErrorMessage(err.message);
+        // Note: Heroku terminates the request after 30 seconds
+        // @todo identify timeout error and handle it differently
+        console.log(err);
       });
-    setIsMinting(false);
   };
 
   const sendDonation = async () => {
@@ -240,21 +248,22 @@ const App: FC = () => {
             </h1>
 
             {/* Error message */}
-            <div className="mb-8 text-red-500 leading-relaxed  md:mb-12 lg:w-4/5 xl:text-lg">
-              {error && (
-                <div onClick={() => setError(false)} className="text-red-500">
-                  <strong>Something went wrong. Please try again later.</strong>
-                  <p> Here's error message: {errorMessage}</p>
-                </div>
-              )}
-            </div>
+            {error && (
+              <div onClick={() => setError(false)} className="mb-8 text-red-500 leading-relaxed  md:mb-12 lg:w-4/5 xl:text-lg">
+                <strong>Something went wrong. Please try again later.</strong>
+                Here's error message: {errorMessage}
+              </div>
+            )}
 
             {/* NFT Details */}
-            <div className="mb-8 text-2xl font-bold text-black text-center">
-              {showNFTDetails && (
-                <div>{`${nftDetail.balanceOf} (Yours)/ ${nftDetail.totalSupply} (Total Issued)`}</div>
-              )}
-            </div>
+            {showNFTDetails && (
+              <div className="mb-8 text-2xl font-bold text-black text-center">{nftDetail.balanceOf} (Yours)/ {nftDetail.totalSupply} (Total Issued)</div>
+            )}
+
+            {/* Show process delay excuse */}
+            {isMinted && !showNFTDetails && (
+              <div className="mb-8 text-2xl font-bold text-black text-center">Ethereum is processing your request. We will check on the status every 10 sec. This message will go away once arrived!</div>
+            )}
 
             {/* Call to action */}
             {isMinted ? (
