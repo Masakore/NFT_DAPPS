@@ -1,8 +1,16 @@
 import express, { Request, Response} from 'express';;
+import timeout from 'connect-timeout'
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 import cors from 'cors';
 import 'dotenv/config';
+
+/* @todo
+- introduce proper error handlings
+- introduce dynamic gas estimation 
+- db connection pooling
+- db connection close
+*/
 
 // This is our receipt database
 import db from "./database";
@@ -23,6 +31,7 @@ if (!privateKey) throw new Error("Private key is not set");
 // Set up express
 const server = express();
 const port = process.env.PORT || 8000;
+server.use(timeout('120s')); // Find better approach. 120s is too long
 server.use(express.urlencoded({ extended: true }));
 server.use(express.json()); // To parse the incoming requests with JSON payloads
 server.use(cors()); // Bad practice but to save time for this demo
@@ -48,7 +57,7 @@ server.get("/connectionTest", async (_, res: Response) => {
   }
 });
 
-// mint NFT
+// mint NFT with its receipt
 server.post("/mint", async (req: Request, res: Response) => {
   try {
     const { recipient } = req.body;
@@ -110,7 +119,7 @@ server.post("/details", async (req: Request, res: Response) => {
   }
 });
 
-// Retrieve all receipts
+// Retrieve target user's receipts of NFT. Currently, not in use.
 server.post('/receipts', (req: Request, res: Response) => {
   try {
     const { userAddress } = req.body;
@@ -126,15 +135,6 @@ server.post('/receipts', (req: Request, res: Response) => {
   }
 });
 
-const serverTimeoutSetting = server.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server listening at ${port}`);
 });
-
-serverTimeoutSetting.timeout = 120000; // 2 minutes
-
-/* @todo
-- introduce proper error handlings
-- introduce dynamic gas estimation 
-- db connection pooling
-- db connection close
-*/
