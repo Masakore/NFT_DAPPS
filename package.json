@@ -7,9 +7,13 @@
     "node": "18.x"
   },
   "scripts": {
-    "postinstall": "cd backend/ && npm install"
+    "postinstall": "cd backend/ && npm install",
+    "prepare": "husky install"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "husky": "^8.0.3"
+  }
 }

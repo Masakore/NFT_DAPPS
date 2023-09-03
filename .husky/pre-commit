@@ -1,6 +1,18 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# prettier:check
-# npm run lint:check
-# npm run solhint:check
+cd `pwd`
+
+cd backend
+npm run prettier:check
+npm run lint:check
+cd ..
+
+cd frontend
+npm run prettier:check
+npm run lint:check
+cd ..
+
+cd contracts
+npm run solhint:check
+cd ..

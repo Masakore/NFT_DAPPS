@@ -1,5 +1,5 @@
-import express, { Request, Response} from 'express';;
-import timeout from 'connect-timeout'
+import express, { Request, Response } from 'express';
+import timeout from 'connect-timeout';
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 import cors from 'cors';
@@ -13,20 +13,23 @@ import 'dotenv/config';
 */
 
 // This is our receipt database
-import db from "./database";
+import db from './database';
 
 // Load contract ABI
-import contractMetadata from "./abi/SimpleNFT.json";
+import contractMetadata from './abi/SimpleNFT.json';
 
 // Set up blockchain provider
-const rpcURL = process.env.RPC_URL || "127.0.0.1:8545";
-const provider = new Web3.providers.HttpProvider(rpcURL, {timeout:300});
+const rpcURL = process.env.RPC_URL || '127.0.0.1:8545';
+const provider = new Web3.providers.HttpProvider(rpcURL, { timeout: 300 });
 const web3 = new Web3(provider);
-const simpleNFT = new web3.eth.Contract(contractMetadata.abi as AbiItem[], contractMetadata.address);
+const simpleNFT = new web3.eth.Contract(
+  contractMetadata.abi as AbiItem[],
+  contractMetadata.address,
+);
 
 // Set up private key
 const privateKey = process.env.PRIVATE_KEY;
-if (!privateKey) throw new Error("Private key is not set");
+if (!privateKey) throw new Error('Private key is not set');
 
 // Set up express
 const server = express();
@@ -37,28 +40,28 @@ server.use(express.json()); // To parse the incoming requests with JSON payloads
 server.use(cors()); // Bad practice but to save time for this demo
 
 // Endpoints
-server.get("/hello", (_, res: Response) => {
-  res.status(200).json({ status: "ok" });
+server.get('/hello', (_, res: Response) => {
+  res.status(200).json({ status: 'ok' });
 });
 
 // blockchain connection test
-server.get("/connectionTest", async (_, res: Response) => {
+server.get('/connectionTest', async (_, res: Response) => {
   try {
     const blockNumber = await web3.eth.getBlockNumber();
     return res.status(200).json({
-      status: "ok",
+      status: 'ok',
       blockNumber: blockNumber,
     });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
-      status: "failed",
+      status: 'failed',
     });
   }
 });
 
 // mint NFT with its receipt
-server.post("/mint", async (req: Request, res: Response) => {
+server.post('/mint', async (req: Request, res: Response) => {
   try {
     const { recipient } = req.body;
 
@@ -70,12 +73,15 @@ server.post("/mint", async (req: Request, res: Response) => {
     };
 
     const signature = await web3.eth.accounts.signTransaction(tx, privateKey);
-    if (!signature || !signature.rawTransaction) { 
-      throw new Error("Error occurred while creating a signature. Private key might be invalid");
+    if (!signature || !signature.rawTransaction) {
+      throw new Error(
+        'Error occurred while creating a signature. Private key might be invalid',
+      );
     }
 
     const receipt = await web3.eth
-      .sendSignedTransaction(signature.rawTransaction).on('error', (error) => { 
+      .sendSignedTransaction(signature.rawTransaction)
+      .on('error', (error) => {
         throw new Error(error.message);
       });
     const stmt = db.prepare(
@@ -84,9 +90,8 @@ server.post("/mint", async (req: Request, res: Response) => {
     stmt.run(receipt.transactionHash, recipient);
 
     return res.status(200).json({
-      status: "ok",
+      status: 'ok',
     });
-
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -96,7 +101,7 @@ server.post("/mint", async (req: Request, res: Response) => {
 });
 
 // Fetch NFT details plus user's balance
-server.post("/details", async (req: Request, res: Response) => {
+server.post('/details', async (req: Request, res: Response) => {
   try {
     const { userAddress } = req.body;
     const totalSupply = await simpleNFT.methods.totalSupply().call();
@@ -105,7 +110,7 @@ server.post("/details", async (req: Request, res: Response) => {
     const balanceOf = await simpleNFT.methods.balanceOf(userAddress).call();
 
     return res.status(200).json({
-      status: "ok",
+      status: 'ok',
       name: contractName,
       symbol: symbol,
       totalSupply: totalSupply,
@@ -114,7 +119,7 @@ server.post("/details", async (req: Request, res: Response) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({
-      status: "failed",
+      status: 'failed',
     });
   }
 });
@@ -123,14 +128,18 @@ server.post("/details", async (req: Request, res: Response) => {
 server.post('/receipts', (req: Request, res: Response) => {
   try {
     const { userAddress } = req.body;
-    db.all('SELECT * FROM nft_receipts WHERE owner = ?', [userAddress], (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      return res.status(200).json(rows);
-    });
-  } catch (error) { 
+    db.all(
+      'SELECT * FROM nft_receipts WHERE owner = ?',
+      [userAddress],
+      (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        return res.status(200).json(rows);
+      },
+    );
+  } catch (error) {
     console.log(error);
     return res.status(500).json({
-      status: "failed",
+      status: 'failed',
     });
   }
 });
