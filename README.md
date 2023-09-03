@@ -4,7 +4,8 @@
 
 
 ## How to run this app
-This app consists of three parts: backend, frontend and smart contract. You can open the following *frontend* and connect your wallet and mint.
+This app consists of three parts: backend, frontend and smart contract. You can open the following *frontend* and connect your wallet and mint.  
+Note: due to time constraint, I couldn't implement the test cases.
 
 - Frontend on Vercel: https://simple-nft-d-qof26bv1p-masakore.vercel.app/
 - Backend on Heroku: https://simplenft-api-b11f0d93b70a.herokuapp.com/
